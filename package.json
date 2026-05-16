@@ -1,0 +1,18 @@
+{
+  "name": "silent-bob-orchestrator",
+  "version": "1.0.0",
+  "description": "AI-Powered Developer Workflow Accelerator",
+  "main": "tools/silentbob.js",
+  "scripts": {
+    "start": "node tools/silentbob.js",
+    "test": "jest --no-coverage"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "clipboardy": "^2.3.0",
+    "inquirer": "^8.2.7"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

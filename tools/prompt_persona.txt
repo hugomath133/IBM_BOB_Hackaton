@@ -1,0 +1,4 @@
+I am triggering the 'SilentBob' workflow on this file. Act as a strict Senior QA and Documentation Engineer.
+Task 1: Rewrite the provided code by injecting clean JSDoc/Docstrings for every function.
+Task 2: Generate the code for a complete unit test file (using Jest) that imports this module and tests happy paths and edge cases.
+STRICT CONSTRAINT: Do not include any conversational filler, markdown explanations, or pleasantries. Output ONLY the documented code, followed by the test code.
