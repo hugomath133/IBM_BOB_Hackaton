@@ -12,6 +12,7 @@
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const path = require('path');
+const fs = require('fs');
 const detectChanges = require('./detect-changes');
 const { runTests } = require('./auto-healer');
 
@@ -25,6 +26,34 @@ function getTestFilePath(filePath) {
   const dir = path.dirname(filePath);
   const fileName = path.basename(filePath, '.js');
   return path.join(dir, `${fileName}.test.js`);
+}
+
+/**
+ * Reads file content synchronously
+ * 
+ * @param {string} filePath - Path to the file to read
+ * @returns {string} File content
+ * @throws {Error} If file cannot be read
+ */
+function readFileContent(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    throw new Error(`Failed to read file ${filePath}: ${error.message}`);
+  }
+}
+
+/**
+ * Copies text to clipboard using clipboardy
+ * 
+ * @param {string} text - Text to copy to clipboard
+ * @returns {Promise<void>}
+ */
+async function copyToClipboard(text) {
+  // Using dynamic import for ESM-only clipboardy package
+  // Alternative: Install clipboardy@2.3.0 for CommonJS support
+  const clipboardy = await import('clipboardy');
+  await clipboardy.default.write(text);
 }
 
 /**
@@ -67,17 +96,39 @@ async function main() {
 
   console.log(chalk.blue(`\n→ Selected: ${selectedFile}\n`));
 
-  // Step 3: Ask user to use IBM Bob IDE
-  console.log(chalk.yellow('┌─────────────────────────────────────────────────────────┐'));
-  console.log(chalk.yellow('│  Please use IBM Bob IDE to generate documentation       │'));
-  console.log(chalk.yellow('│  and tests for this file:                               │'));
-  console.log(chalk.yellow('│                                                          │'));
-  console.log(chalk.white(`│  ${selectedFile.padEnd(56)} │`));
-  console.log(chalk.yellow('│                                                          │'));
-  console.log(chalk.yellow('│  Once you have generated and saved the changes,          │'));
-  console.log(chalk.yellow('│  press ENTER to continue...                              │'));
-  console.log(chalk.yellow('└─────────────────────────────────────────────────────────┘\n'));
+  // Step 2.5: Read persona and source code, copy to clipboard
+  try {
+    console.log(chalk.blue('→ Preparing prompt for clipboard...\n'));
+    
+    // Read prompt_persona.txt
+    const personaPath = path.join(__dirname, 'prompt_persona.txt');
+    const personaContent = readFileContent(personaPath);
+    
+    // Read selected file source code
+    const sourceCode = readFileContent(selectedFile);
+    
+    // Concatenate: persona first, then source code
+    const combinedPrompt = `${personaContent}\n\n${'='.repeat(80)}\n\nFILE: ${selectedFile}\n\n${sourceCode}`;
+    
+    // Copy to clipboard
+    await copyToClipboard(combinedPrompt);
+    
+    // Success message
+    console.log(chalk.green.bold('✅ Prompt successfully copied to clipboard!\n'));
+    console.log(chalk.yellow('┌─────────────────────────────────────────────────────────┐'));
+    console.log(chalk.yellow('│  Please paste it into this chat to generate the code,   │'));
+    console.log(chalk.yellow('│  apply the changes to your file, and save.              │'));
+    console.log(chalk.yellow('└─────────────────────────────────────────────────────────┘\n'));
+    
+  } catch (error) {
+    console.error(chalk.red.bold('✗ Failed to copy to clipboard:'));
+    console.error(chalk.red(`  ${error.message}\n`));
+    console.log(chalk.yellow('  Please ensure clipboardy is installed:'));
+    console.log(chalk.gray('  npm install clipboardy@2.3.0\n'));
+    process.exit(1);
+  }
 
+  // Step 3: Ask user to confirm completion
   await inquirer.prompt([
     {
       type: 'confirm',
@@ -128,6 +179,6 @@ if (require.main === module) {
   });
 }
 
-module.exports = { main, getTestFilePath };
+module.exports = { main, getTestFilePath, readFileContent, copyToClipboard };
 
 // Made with Bob
